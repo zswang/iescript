@@ -28,6 +28,8 @@
 //------------------------------------------------------------------------------1.02.008
 //2009-12-20 ZswangY37 No.1 添加 调用IE“另存为”
 //2009-12-20 ZswangY37 No.1 添加 Tab键排版处理
+//------------------------------------------------------------------------------1.02.008
+//2009-12-23 ZswangY37 No.1 添加 文件编码的处理，包括Unicode、Utf8和无BOM的Utf8文件
 
 unit IEScript20Unit;
 
@@ -169,6 +171,13 @@ type
     MemoScriptEditor: TMemo;
     ActionSavePage: TAction;
     MenuItemSavePage: TMenuItem;
+    MenuItemCoding: TMenuItem;
+    MenuItemAnsiA: TMenuItem;
+    MenuItemUtf8A: TMenuItem;
+    MenuItemUnicode: TMenuItem;
+    ActionCodingAnsi: TAction;
+    ActionCodingUtf8: TAction;
+    ActionCodingUnicode: TAction;
     procedure FormCreate(Sender: TObject);
     procedure ImageDragMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -229,12 +238,16 @@ type
     procedure ActionEditSelectAllExecute(Sender: TObject);
     procedure ActionSearchAgainExecute(Sender: TObject);
     procedure ActionSavePageExecute(Sender: TObject);
+    procedure ActionCodingAnsiExecute(Sender: TObject);
+    procedure ActionCodingUtf8Execute(Sender: TObject);
+    procedure ActionCodingUnicodeExecute(Sender: TObject);
   private
     { Private declarations }
     FMouseDown: Boolean;
     FIEHandle: THandle;
     FDocument: IHTMLDocument2;
     FWebBrowser2: IWebBrowser2;
+    FEncoding: string;
     
     FHasDocument: Boolean;
     FScriptChanging: Boolean;
@@ -261,7 +274,7 @@ implementation
 {$R CursorRes.res}
 
 uses ShellAPI, ActiveX, IniFiles, CommCtrl, Clipbrd, Math, WindowDialog,
-  FavoriteDialog, RecycleDialog, Search, MSHTMCID;
+  FavoriteDialog, RecycleDialog, Search, MSHTMCID, FileFunctions;
 
 const
 { VK_0 thru VK_9 are the same as ASCII '0' thru '9' ($30 - $39) }
@@ -946,7 +959,7 @@ begin
   if DirectoryExists(vFileName) then
     vFileName := IncludeTrailingPathDelimiter(vFileName) + 'default';
   ForceDirectories(ExtractFilePath(vFileName));
-  MemoScriptEditor.Lines.SaveToFile(vFileName);
+  SetFileTextAndEncoding(vFileName, FEncoding, MemoScriptEditor.Text);
   FScriptChanging := False;
   MemoScriptEditor.Modified := False;
 end;
@@ -984,7 +997,14 @@ begin
       vFileName := IncludeTrailingPathDelimiter(vFileName) + 'default';
     if FileExists(vFileName) then
     begin
-      MemoScriptEditor.Lines.LoadFromFile(vFileName);
+      MemoScriptEditor.Lines.Text := GetFileTextAndEncoding(vFileName, FEncoding);
+      FEncoding := GetFileEncoding(vFileName);
+      if (FEncoding = 'ansi') or (FEncoding = '~ansi') then
+        ActionCodingAnsi.Checked := True;
+      if (FEncoding = 'utf8') or (FEncoding = '~utf8') then
+        ActionCodingUtf8.Checked := True;
+      if (FEncoding = 'unicode') or (FEncoding = '~unicode') then
+        ActionCodingUnicode.Checked := True;
       FScriptChanging := False;
     end;
   end else
@@ -1391,6 +1411,30 @@ end;
 procedure TFormIEScript.ActionNoForegroundExecute(Sender: TObject);
 begin
   ;
+end;
+
+procedure TFormIEScript.ActionCodingAnsiExecute(Sender: TObject);
+begin
+  if TAction(Sender).Checked then Exit;
+  TAction(Sender).Checked := True;
+  FEncoding := 'ansi';
+  FScriptChanging := True;
+end;
+
+procedure TFormIEScript.ActionCodingUtf8Execute(Sender: TObject);
+begin
+  if TAction(Sender).Checked then Exit;
+  TAction(Sender).Checked := True;
+  FEncoding := 'utf8';
+  FScriptChanging := True;
+end;
+
+procedure TFormIEScript.ActionCodingUnicodeExecute(Sender: TObject);
+begin
+  if TAction(Sender).Checked then Exit;
+  TAction(Sender).Checked := True;
+  FEncoding := 'unicode';
+  FScriptChanging := True;
 end;
 
 procedure TFormIEScript.TreeViewScriptListChanging(Sender: TObject;

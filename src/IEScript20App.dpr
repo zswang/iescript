@@ -6,7 +6,8 @@ uses
   FavoriteDialog in 'FavoriteDialog.pas',
   Search in 'Search.pas',
   MSHTMCID in 'MSHTMCID.pas',
-  WindowDialog in 'WindowDialog.pas';
+  WindowDialog in 'WindowDialog.pas',
+  FileFunctions in 'FileFunctions.pas';
 
 {$R *.res}
 
