@@ -1,0 +1,21 @@
+#获取QQ嵌套页的Cookie
+
+= 第一步 选择目标页面 =
+
+[http://hi.csdn.net/attachment/200912/23/3923_1261533749ZWb6.gif]
+
+在QQ主窗体中打开QQ股票页
+将《IE脚本辅助》的瞄准器图标拖拽到QQ股票也中心位置，放开鼠标
+
+= 第二步 编写脚本 =
+[http://hi.csdn.net/attachment/200912/23/3923_1261533750F905.gif]
+
+在左侧导航中打开右键菜单，新建一个javascript文件
+在右侧输入框中编写脚本
+{{{alert(document.cookie);}}}
+
+= 第三步 运行脚本 =
+[http://hi.csdn.net/attachment/200912/23/3923_12615337504495.gif]
+
+点击工具条上的运行按钮（绿色三角），则执行了该脚本。
+如图所示：我们获得了QQ嵌套页面的cookie
