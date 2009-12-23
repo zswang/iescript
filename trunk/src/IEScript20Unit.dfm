@@ -1538,6 +1538,27 @@ object FormIEScript: TFormIEScript
       Hint = #20445#23384#32593#39029
       OnExecute = ActionSavePageExecute
     end
+    object ActionCodingAnsi: TAction
+      Category = 'Coding'
+      Caption = 'ANSI'
+      GroupIndex = 1001
+      Hint = #40664#35748#32534#30721
+      OnExecute = ActionCodingAnsiExecute
+    end
+    object ActionCodingUtf8: TAction
+      Category = 'Coding'
+      Caption = 'UTF-8'
+      GroupIndex = 1001
+      Hint = 'UTF-8'
+      OnExecute = ActionCodingUtf8Execute
+    end
+    object ActionCodingUnicode: TAction
+      Category = 'Coding'
+      Caption = 'Unicode'
+      GroupIndex = 1001
+      Hint = 'Unicode'
+      OnExecute = ActionCodingUnicodeExecute
+    end
   end
   object MainMenuOne: TMainMenu
     AutoHotkeys = maManual
@@ -1591,6 +1612,18 @@ object FormIEScript: TFormIEScript
       end
       object MenuItemEditSelectAllA: TMenuItem
         Action = ActionEditSelectAll
+      end
+    end
+    object MenuItemCoding: TMenuItem
+      Caption = #32534#30721'(&C)'
+      object MenuItemAnsiA: TMenuItem
+        Action = ActionCodingAnsi
+      end
+      object MenuItemUtf8A: TMenuItem
+        Action = ActionCodingUtf8
+      end
+      object MenuItemUnicode: TMenuItem
+        Action = ActionCodingUnicode
       end
     end
     object MenuItemSearch: TMenuItem
