@@ -1337,6 +1337,20 @@ object FormIEScript: TFormIEScript
     OnUpdate = ActionListToolsUpdate
     Left = 142
     Top = 56
+    object ActionCodingAnsi: TAction
+      Category = 'Coding'
+      Caption = 'ANSI'
+      GroupIndex = 1001
+      Hint = #40664#35748#32534#30721
+      OnExecute = ActionCodingAnsiExecute
+    end
+    object ActionCodingUtf8: TAction
+      Category = 'Coding'
+      Caption = 'UTF-8'
+      GroupIndex = 1001
+      Hint = 'UTF-8'
+      OnExecute = ActionCodingUtf8Execute
+    end
     object ActionSelectWindow: TAction
       Caption = #36873#25321'IE'#31383#20307'(&W)'
       Hint = #36873#25321#33050#26412#25191#34892#30340'IE'#31383#20307
@@ -1348,6 +1362,13 @@ object FormIEScript: TFormIEScript
       Caption = #20851#20110'(&A)'
       Hint = #20851#20110#26412#36719#20214
       OnExecute = ActionAboutExecute
+    end
+    object ActionCodingUtf8NoneBOM: TAction
+      Category = 'Coding'
+      Caption = 'UTF-8('#26080'BOM)'
+      GroupIndex = 1001
+      Hint = 'UTF-8('#26080'BOM)'
+      OnExecute = ActionCodingUtf8NoneBOMExecute
     end
     object ActionClose: TAction
       Caption = #20851#38381'(&C)'
@@ -1436,6 +1457,7 @@ object FormIEScript: TFormIEScript
       Caption = #26032#24314'&JavaScript'
       Hint = #22312#24403#21069#30446#24405#65292#26032#24314'JavaScript'
       ImageIndex = 10
+      ShortCut = 45
       OnExecute = ActionNewScriptExecute
     end
     object ActionNewVBScript: TAction
@@ -1538,26 +1560,17 @@ object FormIEScript: TFormIEScript
       Hint = #20445#23384#32593#39029
       OnExecute = ActionSavePageExecute
     end
-    object ActionCodingAnsi: TAction
-      Category = 'Coding'
-      Caption = 'ANSI'
-      GroupIndex = 1001
-      Hint = #40664#35748#32534#30721
-      OnExecute = ActionCodingAnsiExecute
-    end
-    object ActionCodingUtf8: TAction
-      Category = 'Coding'
-      Caption = 'UTF-8'
-      GroupIndex = 1001
-      Hint = 'UTF-8'
-      OnExecute = ActionCodingUtf8Execute
-    end
     object ActionCodingUnicode: TAction
       Category = 'Coding'
       Caption = 'Unicode'
       GroupIndex = 1001
       Hint = 'Unicode'
       OnExecute = ActionCodingUnicodeExecute
+    end
+    object ActionSelectRoot: TAction
+      Caption = #36873#25321#26681#30446#24405
+      Hint = #36873#25321#26681#30446#24405
+      OnExecute = ActionSelectRootExecute
     end
   end
   object MainMenuOne: TMainMenu
@@ -1621,6 +1634,9 @@ object FormIEScript: TFormIEScript
       end
       object MenuItemUtf8A: TMenuItem
         Action = ActionCodingUtf8
+      end
+      object MenuItemUtf8NoneBOM: TMenuItem
+        Action = ActionCodingUtf8NoneBOM
       end
       object MenuItemUnicode: TMenuItem
         Action = ActionCodingUnicode
@@ -1752,6 +1768,12 @@ object FormIEScript: TFormIEScript
     end
     object MenuItemDeleteB: TMenuItem
       Action = ActionDelete
+    end
+    object MenuItemLineC: TMenuItem
+      Caption = '-'
+    end
+    object MenuItemSelectRoot: TMenuItem
+      Action = ActionSelectRoot
     end
   end
   object FindDialogOne: TFindDialog

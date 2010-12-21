@@ -27,9 +27,12 @@
 //2008-12-14 ZswangY37 No.1 添加 节点切换时，脚本改变保存提示
 //------------------------------------------------------------------------------1.02.008
 //2009-12-20 ZswangY37 No.1 添加 调用IE“另存为”
-//2009-12-20 ZswangY37 No.1 添加 Tab键排版处理
+//2009-12-20 ZswangY37 No.2 添加 Tab键排版处理
 //------------------------------------------------------------------------------1.02.008
 //2009-12-23 ZswangY37 No.1 添加 文件编码的处理，包括Unicode、Utf8和无BOM的Utf8文件
+//------------------------------------------------------------------------------1.02.008
+//2010-12-21 ZswangY37 No.1 完善 顶级也能默认编辑文件
+//2010-12-21 ZswangY37 No.2 完善 添加无BOM Utf8菜单
 
 unit IEScript20Unit;
 
@@ -178,6 +181,11 @@ type
     ActionCodingAnsi: TAction;
     ActionCodingUtf8: TAction;
     ActionCodingUnicode: TAction;
+    ActionCodingUtf8NoneBOM: TAction;
+    MenuItemUtf8NoneBOM: TMenuItem;
+    MenuItemLineC: TMenuItem;
+    ActionSelectRoot: TAction;
+    MenuItemSelectRoot: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure ImageDragMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -241,6 +249,8 @@ type
     procedure ActionCodingAnsiExecute(Sender: TObject);
     procedure ActionCodingUtf8Execute(Sender: TObject);
     procedure ActionCodingUnicodeExecute(Sender: TObject);
+    procedure ActionCodingUtf8NoneBOMExecute(Sender: TObject);
+    procedure ActionSelectRootExecute(Sender: TObject);
   private
     { Private declarations }
     FMouseDown: Boolean;
@@ -257,6 +267,7 @@ type
     FLastChar: Char; // 按键最后输入的字符
     FSearchEvent: TNotifyEvent;
     FSearchDialog: TFindDialog;
+    FLastChangingNode: TTreeNode;
     function ShortScript: string;
     function EvalScript: string;
     procedure ApplicationHint(Sender: TObject);
@@ -620,11 +631,11 @@ var
   vLanguage: string;
 begin
   if MemoScriptEditor.GetTextLen <= 0 then Exit; // 脚本无内容
-  if not Assigned(TreeViewScriptList.Selected) then Exit;
   FDocument := nil;
   FHasDocument := DocumentFromHWND(FIEHandle, FDocument) = 0;
   if not FHasDocument then Exit;
-  if SameText(ExtractFileExt(TreeViewScriptList.Selected.Text), '.vb') then
+  if Assigned(TreeViewScriptList.Selected) and
+    SameText(ExtractFileExt(TreeViewScriptList.Selected.Text), '.vbs') then
     vLanguage := 'VBScript'
   else vLanguage := 'JavaScript';
   vHandle := FIEHandle;
@@ -720,7 +731,11 @@ begin
   pScanPath(ExePath, nil);
   TreeViewScriptList.Selected := vSelectNode;
   if Assigned(TreeViewScriptList.Selected) then
-    TreeViewScriptList.Selected.Expand(False);
+    TreeViewScriptList.Selected.Expand(False)
+  else begin
+    ActionCodingUtf8.Checked := True;
+    TreeViewScriptListChange(TreeViewScriptList, nil);
+  end;
 end;
 
 procedure TFormIEScript.FormDestroy(Sender: TObject);
@@ -870,28 +885,27 @@ procedure TFormIEScript.ActionListToolsUpdate(Action: TBasicAction;
 var
   vPoint: TPoint;
 begin
-  ActionExecuteScript.Enabled := Assigned(TreeViewScriptList.Selected) and
+  ActionExecuteScript.Enabled :=
     FHasDocument and (MemoScriptEditor.GetTextLen > 0) and IsWindow(FIEHandle);
-  ActionAddFavorite.Enabled := Assigned(TreeViewScriptList.Selected) and
-    (MemoScriptEditor.GetTextLen > 0);
+  ActionAddFavorite.Enabled := MemoScriptEditor.GetTextLen > 0;
   ActionRename.Enabled := Assigned(TreeViewScriptList.Selected);
   ActionNewJavaScript.Enabled := (TreeViewScriptList.Items.Count <= 0) or
-    Assigned(TreeViewScriptList.Selected);
+      Assigned(TreeViewScriptList.Selected);
   ActionNewVBScript.Enabled := (TreeViewScriptList.Items.Count <= 0) or
-    Assigned(TreeViewScriptList.Selected);
+      Assigned(TreeViewScriptList.Selected);
   ActionNewSibling.Enabled := (TreeViewScriptList.Items.Count <= 0) or
-    Assigned(TreeViewScriptList.Selected);
+      Assigned(TreeViewScriptList.Selected);
   ActionNewChildren.Enabled := Assigned(TreeViewScriptList.Selected) and
     Assigned(TreeViewScriptList.Selected.Data);
   ActionViewSource.Enabled := FHasDocument and IsWindow(FIEHandle);
   ActionProperties.Enabled := FHasDocument and IsWindow(FIEHandle);
   ActionSavePage.Enabled := FHasDocument and IsWindow(FIEHandle);
-  ActionSave.Enabled := Assigned(TreeViewScriptList.Selected) and FScriptChanging;
-  ActionOpenDir.Enabled := Assigned(TreeViewScriptList.Selected);
+  ActionSave.Enabled := FScriptChanging;
+  ActionOpenDir.Enabled := True;
   ActionDelete.Enabled := Assigned(TreeViewScriptList.Selected);
   ActionCopyShort.Enabled := MemoScriptEditor.GetTextLen > 0;
   ActionCopyEval.Enabled := MemoScriptEditor.GetTextLen > 0;
-  ActionExecuteScriptTimer.Enabled := Assigned(TreeViewScriptList.Selected) and
+  ActionExecuteScriptTimer.Enabled := 
     FHasDocument and (MemoScriptEditor.GetTextLen > 0) and IsWindow(FIEHandle);
   if TimerOne.Enabled then
     ActionExecuteScriptTimer.ImageIndex := 17
@@ -915,6 +929,7 @@ begin
   //ActionEditRedo.Enabled := MemoScriptEditor.CanRedo;
   ActionEditUndo.Enabled := MemoScriptEditor.CanUndo;
   ActionEditSelectAll.Enabled := not MemoScriptEditor.ReadOnly;
+  ActionSelectRoot.Enabled := Assigned(TreeViewScriptList.Selected);
 end;
 
 procedure TFormIEScript.ActionViewSourceExecute(Sender: TObject);
@@ -954,7 +969,7 @@ procedure TFormIEScript.ActionSaveExecute(Sender: TObject);                     
 var
   vFileName: string;
 begin
-  if not Assigned(TreeViewScriptList.Selected) then Exit;
+  //if not Assigned(TreeViewScriptList.Selected) then Exit;
   vFileName := GetNodePath(TreeViewScriptList.Selected);
   if DirectoryExists(vFileName) then
     vFileName := IncludeTrailingPathDelimiter(vFileName) + 'default';
@@ -987,30 +1002,24 @@ procedure TFormIEScript.TreeViewScriptListChange(Sender: TObject;
 var
   vFileName: string;
 begin
-  if Assigned(TTreeView(Sender).Selected) then
+  FSelectPath := GetNodePath(TTreeView(Sender).Selected);
+  MemoScriptEditor.Clear;
+  vFileName := FSelectPath;
+  if DirectoryExists(vFileName) then
+    vFileName := IncludeTrailingPathDelimiter(vFileName) + 'default';
+  if FileExists(vFileName) then
   begin
-    MemoScriptEditor.Enabled := True;
-    FSelectPath := GetNodePath(TTreeView(Sender).Selected);
-    MemoScriptEditor.Clear;
-    vFileName := FSelectPath;
-    if DirectoryExists(vFileName) then
-      vFileName := IncludeTrailingPathDelimiter(vFileName) + 'default';
-    if FileExists(vFileName) then
-    begin
-      MemoScriptEditor.Lines.Text := GetFileTextAndEncoding(vFileName, FEncoding);
-      FEncoding := GetFileEncoding(vFileName);
-      if (FEncoding = 'ansi') or (FEncoding = '~ansi') then
-        ActionCodingAnsi.Checked := True;
-      if (FEncoding = 'utf8') or (FEncoding = '~utf8') then
-        ActionCodingUtf8.Checked := True;
-      if (FEncoding = 'unicode') or (FEncoding = '~unicode') then
-        ActionCodingUnicode.Checked := True;
-      FScriptChanging := False;
-    end;
-  end else
-  begin
-    MemoScriptEditor.Clear;
-    MemoScriptEditor.Enabled := False;
+    MemoScriptEditor.Lines.Text := GetFileTextAndEncoding(vFileName, FEncoding);
+    FEncoding := GetFileEncoding(vFileName);
+    if (FEncoding = 'ansi') or (FEncoding = '~ansi') then
+      ActionCodingAnsi.Checked := True
+    else if FEncoding = 'utf8' then
+      ActionCodingUtf8.Checked := True
+    else if FEncoding = '~utf8' then
+      ActionCodingUtf8NoneBOM.Checked := True
+    else if (FEncoding = 'unicode') or (FEncoding = '~unicode') then
+      ActionCodingUnicode.Checked := True;
+    FScriptChanging := False;
   end;
 end;
 
@@ -1032,7 +1041,6 @@ end;
 
 procedure TFormIEScript.ActionOpenDirExecute(Sender: TObject);
 begin
-  if not Assigned(TreeViewScriptList.Selected) then Exit;
   WinExec(PChar(Format('explorer "%s",/n,/select',
     [GetNodePath(TreeViewScriptList.Selected)])), SW_SHOW);
 end;
@@ -1066,7 +1074,6 @@ var
   vFileName: string;
   vShortScript: string;
 begin
-  if not Assigned(TreeViewScriptList.Selected) then Exit;
   vShortScript := ShortScript;
   if Length(vShortScript) <= 0 then Exit;
   with TAddFavoriteDialog.Create(nil) do try
@@ -1429,6 +1436,14 @@ begin
   FScriptChanging := True;
 end;
 
+procedure TFormIEScript.ActionCodingUtf8NoneBOMExecute(Sender: TObject);
+begin
+  if TAction(Sender).Checked then Exit;
+  TAction(Sender).Checked := True;
+  FEncoding := '~utf8';
+  FScriptChanging := True;
+end;
+
 procedure TFormIEScript.ActionCodingUnicodeExecute(Sender: TObject);
 begin
   if TAction(Sender).Checked then Exit;
@@ -1440,7 +1455,9 @@ end;
 procedure TFormIEScript.TreeViewScriptListChanging(Sender: TObject;
   Node: TTreeNode; var AllowChange: Boolean);                                   //2008-12-14 ZswangY37 No.1
 begin
-  if Assigned(TTreeView(Sender).Selected) and FScriptChanging then
+  if (Node = FLastChangingNode) then Exit;
+  FLastChangingNode := Node;
+  if FScriptChanging then
   begin
     case Application.MessageBox('是否保存已经修改的脚本？',
         '询问', MB_YESNOCANCEL) of
@@ -1490,6 +1507,12 @@ procedure TFormIEScript.ActionSearchAgainExecute(Sender: TObject);
 begin
   if Assigned(FSearchEvent) and Assigned(FSearchDialog) then
     FSearchEvent(FSearchDialog);
+end;
+
+procedure TFormIEScript.ActionSelectRootExecute(Sender: TObject);
+begin
+  TreeViewScriptList.Selected := nil;
+  TreeViewScriptListChange(TreeViewScriptList, nil);
 end;
 
 var
