@@ -28,11 +28,13 @@
 //------------------------------------------------------------------------------1.02.008
 //2009-12-20 ZswangY37 No.1 添加 调用IE“另存为”
 //2009-12-20 ZswangY37 No.2 添加 Tab键排版处理
-//------------------------------------------------------------------------------1.02.008
+//------------------------------------------------------------------------------1.02.009
 //2009-12-23 ZswangY37 No.1 添加 文件编码的处理，包括Unicode、Utf8和无BOM的Utf8文件
-//------------------------------------------------------------------------------1.02.008
+//------------------------------------------------------------------------------1.02.010
 //2010-12-21 ZswangY37 No.1 完善 顶级也能默认编辑文件
 //2010-12-21 ZswangY37 No.2 完善 添加无BOM Utf8菜单
+//------------------------------------------------------------------------------1.02.011
+//2011-03-03 ZswangY37 No.1 完善 添加Win+F2、Win+F5快捷键选中和执行
 
 unit IEScript20Unit;
 
@@ -272,6 +274,8 @@ type
     function EvalScript: string;
     procedure ApplicationHint(Sender: TObject);
     function GetNodePath(ATreeNode: TTreeNode): string;
+    procedure WMHOTKEY(var Msg: TWMHOTKEY); message WM_HOTKEY;
+    function SetIEHandle(AHandle: THandle): Boolean;
   public
     { Public declarations }
   end;
@@ -472,6 +476,9 @@ end; { GetIconIndex }
 //  end;
 //  PScriptInfo = ^TScriptInfo;
 
+const cHotKeyWinF2 = 1002;
+const cHotKeyWinF5 = 1005;
+
 procedure TFormIEScript.FormCreate(Sender: TObject);
 var
   I: Integer;
@@ -524,6 +531,8 @@ LoadCursorFromFile(PChar(ExtractFilePath(ParamStr(0)) + 'FindWindow2.cur'));//*)
   end;
   ActionRefurbish.Execute;
   SystemImageList(ImageListScriptList);
+  RegisterHotKey(Handle, cHotKeyWinF2, MOD_WIN, VK_F2);
+  RegisterHotKey(Handle, cHotKeyWinF5, MOD_WIN, VK_F5);
 end;
 
 procedure TFormIEScript.ImageDragMouseDown(Sender: TObject;
@@ -759,6 +768,8 @@ begin
   finally
     Free;
   end;
+  UnregisterHotKey(Handle, cHotKeyWinF2);
+  UnregisterHotKey(Handle, cHotKeyWinF5);
 end;
 
 function GetFileVersionInfomation( // 读取文件的版本信息
@@ -874,9 +885,13 @@ begin
 '[执行脚本]'#13#10 +
 '  选中IE窗体并且有脚本内容后点击“运行脚本”。'#13#10 +
 ''#13#10 +
+'[快捷键]'#13#10 +
+'  Win+F2选中鼠标所在窗体'#13#10 +
+'  Win+F5选中鼠标所在窗体并执行脚本'#13#10 +
+''#13#10 +
 '功能简单，帮助也简单。'#13#10 +
 ''#13#10 +
-'              --ZswangY37 2008-03-10'#13#10);
+'              --ZswangY37 2011-03-03'#13#10);
   //Application.HelpCommand(HELP_CONTENTS, 0);
 end;
 
@@ -1517,6 +1532,43 @@ end;
 
 var
   vBuffer: array[0..MAX_PATH] of Char;
+
+procedure TFormIEScript.WMHOTKEY(var Msg: TWMHOTKEY);
+begin
+  case Msg.HotKey of
+    cHotKeyWinF2: begin
+      SetIEHandle(WindowFromPoint(Mouse.CursorPos));
+    end;
+    cHotKeyWinF5: begin
+      SetIEHandle(WindowFromPoint(Mouse.CursorPos));
+      ActionExecuteScript.Execute;
+    end;
+  end;
+end;
+
+function TFormIEScript.SetIEHandle(AHandle: THandle): Boolean;
+var
+  vBuffer: array[0..255] of Char;
+begin
+  Result := False;
+  if FIEHandle = AHandle then Exit;
+  ///////Begin 得到IE窗体句柄
+  GetClassName(AHandle, vBuffer, SizeOf(vBuffer));
+  while (AHandle <> 0) and not SameText(vBuffer, 'Internet Explorer_Server') do
+  begin
+    AHandle := GetParent(AHandle);
+    if FIEHandle = AHandle then Exit;
+    GetClassName(AHandle, vBuffer, SizeOf(vBuffer));
+  end;
+  ///////End 得到IE窗体句柄
+  FIEHandle := AHandle;
+  FDocument := nil;
+  FHasDocument := DocumentFromHWND(FIEHandle, FDocument) = 0;
+  if FHasDocument then
+    EditSelect.Text := Format('%d=%s', [FIEHandle, FDocument.url])
+  else EditSelect.Text := Format('%d=<null>', [FIEHandle]);
+  Result := FHasDocument;
+end;
 
 initialization
 
