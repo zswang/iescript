@@ -150,11 +150,19 @@ object FormIEScript: TFormIEScript
     Align = alClient
     Caption = #33050#26412#39044#35272
     TabOrder = 2
+    object Splitter1: TSplitter
+      Left = 2
+      Top = 224
+      Width = 307
+      Height = 3
+      Cursor = crVSplit
+      Align = alBottom
+    end
     object MemoScriptEditor: TMemo
       Left = 2
       Top = 15
       Width = 307
-      Height = 301
+      Height = 209
       Align = alClient
       HideSelection = False
       ScrollBars = ssBoth
@@ -164,6 +172,14 @@ object FormIEScript: TFormIEScript
       OnChange = MemoScriptEditorChange
       OnKeyDown = MemoScriptEditorKeyDown
       OnKeyPress = MemoScriptEditorKeyPress
+    end
+    object MemoLog: TMemo
+      Left = 2
+      Top = 227
+      Width = 307
+      Height = 89
+      Align = alBottom
+      TabOrder = 1
     end
   end
   object GroupBoxScriptList: TGroupBox
@@ -1572,6 +1588,10 @@ object FormIEScript: TFormIEScript
       Hint = #36873#25321#26681#30446#24405
       OnExecute = ActionSelectRootExecute
     end
+    object ActionLiveUpdate: TAction
+      Caption = #22312#32447#21319#32423
+      OnExecute = ActionLiveUpdateExecute
+    end
   end
   object MainMenuOne: TMainMenu
     AutoHotkeys = maManual
@@ -1711,6 +1731,9 @@ object FormIEScript: TFormIEScript
     end
     object MenuItemHelp: TMenuItem
       Caption = #24110#21161'(&H)'
+      object MenuItemLiveUpdate: TMenuItem
+        Action = ActionLiveUpdate
+      end
       object MenuItemHelpA: TMenuItem
         Action = ActionHelp
       end

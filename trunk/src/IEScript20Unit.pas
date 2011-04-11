@@ -35,6 +35,9 @@
 //2010-12-21 ZswangY37 No.2 完善 添加无BOM Utf8菜单
 //------------------------------------------------------------------------------1.02.011
 //2011-03-03 ZswangY37 No.1 完善 添加Win+F2、Win+F5快捷键选中和执行
+//------------------------------------------------------------------------------1.02.012
+//2011-04-12 ZswangY37 No.1 完善 增加console.log脚本注入，可以打印日志
+//2011-04-12 ZswangY37 No.2 完善 加入在线升级
 
 unit IEScript20Unit;
 
@@ -46,7 +49,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, MSHTML, StdCtrls, ComCtrls, ExtCtrls, ToolWin, ImgList, Menus,
   ActnList, (*DragDrop, DropTarget, DragDropFile, DropSource,*)AppEvnts,
-  Buttons, SHDocVw;
+  Buttons, SHDocVw, Logger;
 
 type
   TFormIEScript = class(TForm)
@@ -188,6 +191,10 @@ type
     MenuItemLineC: TMenuItem;
     ActionSelectRoot: TAction;
     MenuItemSelectRoot: TMenuItem;
+    MemoLog: TMemo;
+    Splitter1: TSplitter;
+    ActionLiveUpdate: TAction;
+    MenuItemLiveUpdate: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure ImageDragMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -253,14 +260,16 @@ type
     procedure ActionCodingUnicodeExecute(Sender: TObject);
     procedure ActionCodingUtf8NoneBOMExecute(Sender: TObject);
     procedure ActionSelectRootExecute(Sender: TObject);
+    procedure ActionLiveUpdateExecute(Sender: TObject);
   private
     { Private declarations }
     FMouseDown: Boolean;
     FIEHandle: THandle;
     FDocument: IHTMLDocument2;
+    FRunDocument: IHTMLDocument2;
     FWebBrowser2: IWebBrowser2;
     FEncoding: string;
-    
+
     FHasDocument: Boolean;
     FScriptChanging: Boolean;
     FSelectPath: string;
@@ -289,7 +298,8 @@ implementation
 {$R CursorRes.res}
 
 uses ShellAPI, ActiveX, IniFiles, CommCtrl, Clipbrd, Math, WindowDialog,
-  FavoriteDialog, RecycleDialog, Search, MSHTMCID, FileFunctions;
+  FavoriteDialog, RecycleDialog, Search, MSHTMCID, FileFunctions, ComObj,
+  StringFunctions51;
 
 const
 { VK_0 thru VK_9 are the same as ASCII '0' thru '9' ($30 - $39) }
@@ -485,7 +495,7 @@ var
 begin
   ActionAbout.ImageIndex := ImageListTools.Count;
   ImageListTools.AddIcon(Application.Icon);
-  
+
   (*DropFileSourceOne := TDropFileSource.Create(Self);*)
 
   Font.Assign(Screen.MenuFont);
@@ -638,11 +648,26 @@ procedure TFormIEScript.ActionExecuteScriptExecute(Sender: TObject);
 var
   vHandle: THandle;
   vLanguage: string;
+  vScript: OleVariant;
+  vLogger: TIescriptLogger;
 begin
   if MemoScriptEditor.GetTextLen <= 0 then Exit; // 脚本无内容
   FDocument := nil;
   FHasDocument := DocumentFromHWND(FIEHandle, FDocument) = 0;
   if not FHasDocument then Exit;
+  if (Pos('console.log', MemoScriptEditor.Text) > 0) and
+    (FDocument <> FRunDocument) then                                            //2011-04-12 ZswangY37 No.1
+  begin
+    vScript := CreateOleObject('ScriptControl');
+    vScript.Language := 'JavaScript';
+    vScript.AddObject('document', FDocument, True);
+    vLogger := TIescriptLogger.Create;
+    vLogger.Strings := MemoLog.Lines;
+    vScript.AddObject('logger', vLogger as IDispatch, True);
+    vScript.ExecuteStatement('(function (window){ window.console = logger; })(document.parentWindow);');
+    vScript := NULL;
+  end;
+  FRunDocument := FDocument;
   if Assigned(TreeViewScriptList.Selected) and
     SameText(ExtractFileExt(TreeViewScriptList.Selected.Text), '.vbs') then
     vLanguage := 'VBScript'
@@ -1568,6 +1593,12 @@ begin
     EditSelect.Text := Format('%d=%s', [FIEHandle, FDocument.url])
   else EditSelect.Text := Format('%d=<null>', [FIEHandle]);
   Result := FHasDocument;
+end;
+
+procedure TFormIEScript.ActionLiveUpdateExecute(Sender: TObject);               //2011-04-12 ZswangY37 No.2
+begin
+  WinExec(PChar(Format('"%s/LiveUpdate/LiveUpdateApp.exe" cmd=close&handle=%d&success=%s',
+     [ExePath, Handle, StringToURL(ParamStr(0))])), SW_SHOWNORMAL);
 end;
 
 initialization

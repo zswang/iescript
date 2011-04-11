@@ -7,7 +7,11 @@ uses
   Search in 'Search.pas',
   MSHTMCID in 'MSHTMCID.pas',
   WindowDialog in 'WindowDialog.pas',
-  FileFunctions in 'FileFunctions.pas';
+  FileFunctions in 'FileFunctions.pas',
+  IEScript20App_TLB in 'IEScript20App_TLB.pas',
+  Logger in 'Logger.pas' {IescriptLogger: CoClass};
+
+{$R *.TLB}
 
 {$R *.res}
 

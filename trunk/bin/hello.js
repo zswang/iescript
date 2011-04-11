@@ -1,1 +1,1 @@
-alert('hello world!');
+console.log([+new Date, "test", document.cookie]);
