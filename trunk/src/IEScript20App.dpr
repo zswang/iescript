@@ -9,7 +9,8 @@ uses
   WindowDialog in 'WindowDialog.pas',
   FileFunctions in 'FileFunctions.pas',
   IEScript20App_TLB in 'IEScript20App_TLB.pas',
-  Logger in 'Logger.pas' {IescriptLogger: CoClass};
+  Logger in 'Logger.pas' {IescriptLogger: CoClass},
+  StringFunctions51 in 'StringFunctions51.pas';
 
 {$R *.TLB}
 

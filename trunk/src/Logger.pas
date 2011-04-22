@@ -14,6 +14,7 @@ type
   protected
     { Protected declarations }
     procedure log(const AMsg: WideString); safecall;
+    procedure clear; safecall;
   public
     property Strings: TStrings read FStrings write FStrings;
   end;
@@ -25,6 +26,11 @@ uses ComServ;
 procedure TIescriptLogger.log(const AMsg: WideString);
 begin
   if Assigned(FStrings) then FStrings.Add(AMsg);
+end;
+
+procedure TIescriptLogger.clear;
+begin
+  if Assigned(FStrings) then FStrings.Clear;
 end;
 
 initialization
