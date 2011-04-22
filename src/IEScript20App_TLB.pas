@@ -12,10 +12,10 @@ unit IEScript20App_TLB;
 // ************************************************************************ //
 
 // PASTLWTR : $Revision:   1.130  $
-// File generated on 2011-4-12 0:45:50 from Type Library described below.
+// File generated on 2011-4-22 14:13:59 from Type Library described below.
 
 // ************************************************************************  //
-// Type Lib: D:\Projects\GoogleCode\iescript\src\IEScript20App.tlb (1)
+// Type Lib: D:\Projects\CodeGoogle\iescript\src\IEScript20App.tlb (1)
 // LIBID: {BA1F7536-B591-4D06-830D-6E83A6555324}
 // LCID: 0
 // Helpfile: 
@@ -71,6 +71,7 @@ type
   IIescriptLogger = interface(IDispatch)
     ['{19B85BAF-0E2C-4133-B764-E1C9DDEB5F37}']
     procedure log(const AMsg: WideString); safecall;
+    procedure clear; safecall;
   end;
 
 // *********************************************************************//
@@ -81,6 +82,7 @@ type
   IIescriptLoggerDisp = dispinterface
     ['{19B85BAF-0E2C-4133-B764-E1C9DDEB5F37}']
     procedure log(const AMsg: WideString); dispid 1;
+    procedure clear; dispid 2;
   end;
 
 // *********************************************************************//
