@@ -657,7 +657,7 @@ begin
   FDocument := nil;
   FHasDocument := DocumentFromHWND(FIEHandle, FDocument) = 0;
   if not FHasDocument then Exit;
-  if (Pos('console.log', MemoScriptEditor.Text) > 0) then                                            //2011-04-12 ZswangY37 No.1
+  if (Pos('console', MemoScriptEditor.Text) > 0) then                                            //2011-04-12 ZswangY37 No.1
   begin
     vScript := CreateOleObject('ScriptControl');
     vScript.Language := 'JavaScript';
