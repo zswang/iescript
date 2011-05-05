@@ -279,7 +279,6 @@ type
     FSearchEvent: TNotifyEvent;
     FSearchDialog: TFindDialog;
     FLastChangingNode: TTreeNode;
-    FLogger: TIescriptLogger;
     function ShortScript: string;
     function EvalScript: string;
     procedure ApplicationHint(Sender: TObject);
@@ -544,8 +543,6 @@ LoadCursorFromFile(PChar(ExtractFilePath(ParamStr(0)) + 'FindWindow2.cur'));//*)
   SystemImageList(ImageListScriptList);
   RegisterHotKey(Handle, cHotKeyWinF2, MOD_WIN, VK_F2);
   RegisterHotKey(Handle, cHotKeyWinF5, MOD_WIN, VK_F5);
-  FLogger := TIescriptLogger.Create;
-  FLogger.Strings := MemoLog.Lines;
 end;
 
 procedure TFormIEScript.ImageDragMouseDown(Sender: TObject;
@@ -652,6 +649,7 @@ var
   vHandle: THandle;
   vLanguage: string;
   vScript: OleVariant;
+  vLogger: TIescriptLogger;
 begin
   if MemoScriptEditor.GetTextLen <= 0 then Exit; // 脚本无内容
   FDocument := nil;
@@ -662,7 +660,9 @@ begin
     vScript := CreateOleObject('ScriptControl');
     vScript.Language := 'JavaScript';
     vScript.AddObject('document', FDocument, True);
-    vScript.AddObject('logger', FLogger as IDispatch, True);
+    vLogger := TIescriptLogger.Create;
+    vLogger.Strings := MemoLog.Lines;
+    vScript.AddObject('logger', vLogger as IDispatch, True);
     vScript.ExecuteStatement('(function (window){ window.console = logger; })(document.parentWindow);');
     vScript := NULL;
   end;
@@ -794,7 +794,6 @@ begin
   end;
   UnregisterHotKey(Handle, cHotKeyWinF2);
   UnregisterHotKey(Handle, cHotKeyWinF5);
-  FLogger := nil;
 end;
 
 function GetFileVersionInfomation( // 读取文件的版本信息
